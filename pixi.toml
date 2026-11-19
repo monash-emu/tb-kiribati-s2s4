@@ -1,0 +1,58 @@
+[workspace]
+name = "kiribati-tb-summer4-clean"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64"]
+
+[dependencies]
+python = "3.13.*"
+pandas = ">=2.2"
+openpyxl = "*"
+pyarrow = "*"
+pyyaml = "*"
+pytest = "*"
+black = "*"
+ipykernel = "*"
+
+[pypi-dependencies]
+# summer4 PR #83 (feat/save-expressions): output requests (step 51) and saved expressions
+# (steps 40-41). Pinned to the exact commit until it merges; then repin to the merge commit on
+# main, or the next release tag.
+summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "6a39451e6c64a135edb78da0d5798b086aa33d46", extras = ["calibration", "pandas", "frames"] }
+# JAX on the 0.6 series, as summer4template pins it: summer4 develops and tests there, and JAX 0.12
+# breaks parallel NUTS chains through a diffrax solve (summer4 finding CX45).
+jax = ">=0.6,<0.7"
+jaxlib = ">=0.6,<0.7"
+# numpyro 0.20+ requires jax>=0.7.
+numpyro = ">=0.16,<0.20"
+arviz = ">=0.20"
+plotly = ">=6.6, <7"
+nbformat = "*"
+nbclient = "*"
+# Documentation (Sphinx + myst-nb, as summer4's docs/).
+sphinx = ">=8"
+myst-nb = "*"
+pydata-sphinx-theme = "*"
+sphinx-copybutton = "*"
+sphinx-design = "*"
+linkify-it-py = "*"
+kiribati_tb = { path = ".", editable = true }
+
+[tasks]
+test = "pytest -q"
+format = "black src tests scripts docs/conf.py"
+format-check = "black --check src tests scripts docs/conf.py"
+compare = "python scripts/compare_improved.py"
+docs = "sphinx-build -W --keep-going -b html docs docs/_build/html"
+docs-clean = "rm -rf docs/_build"
+
+[feature.reference]
+platforms = ["osx-arm64", "linux-64"]
+# Versions match monash-emu/kiribati_tb_modelling@46a63f0 pixi.lock, so the goldens are
+# produced by the same stack the published analysis ran on (copied from kiribati-tb-summer4).
+dependencies = { python = "3.10.*", numpy = "==1.25.2", pandas = "==2.3.0", openpyxl = "*", pyarrow = "==21.0.0", pyyaml = "*" }
+pypi-dependencies = { summerepi2 = { git = "https://github.com/monash-emu/summer2gen.git", rev = "aad6d4b414db2dbf81ea64e8aece5e0c6cdaa425" }, jax = "==0.4.38", jaxlib = "==0.4.38", computegraph = "==0.4.5" }
+tasks = { golden = "python reference/make_golden.py" }
+
+[environments]
+default = { solve-group = "default" }
+reference = { features = ["reference"], no-default-feature = true }
