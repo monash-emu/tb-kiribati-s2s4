@@ -3,7 +3,7 @@
 The first port of this model, `kiribati-tb-summer4`, was written against summer4 `c9548d5`
 (after v0.2.0a5) and recorded every place it had to work around summer4 in
 `docs/summer4-workarounds.md` (W1–W11) and every sharp edge it met (S1–S12). This port is
-written against summer4 PR #83 (`6a39451`, output requests and saved expressions). The tables
+written against summer4 `main` at `1ff6706`, the merge of PR #83 (output requests and saved expressions). The tables
 say what happened to each.
 
 ## Workarounds

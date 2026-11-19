@@ -13,7 +13,7 @@ come from the stack the published analysis ran on. It never imports summer4.
 
 ```toml
 [pypi-dependencies]
-summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "6a39451e6c64a135edb78da0d5798b086aa33d46", extras = ["calibration", "pandas", "frames"] }
+summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "1ff6706056eb69c6dab0b2f0c86b3a7c787dc4e5", extras = ["calibration", "pandas", "frames"] }
 jax = ">=0.6,<0.7"        # summer4 develops on JAX 0.6; JAX 0.12 breaks parallel NUTS chains
 jaxlib = ">=0.6,<0.7"
 numpyro = ">=0.16,<0.20"  # numpyro 0.20+ needs jax 0.7
