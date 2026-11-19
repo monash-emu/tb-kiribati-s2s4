@@ -20,7 +20,7 @@ Solver                            Dormand–Prince, rtol=atol=1e-10      Tsit5, 
                                                                        and the screening ramps
 ================================  ===================================  ==================================
 
-``docs/06-parity-and-improved.ipynb`` and ``scripts/compare_improved.py`` show the numerical
+``docs/08-parity-and-improved.md`` and ``scripts/compare_improved.py`` show the numerical
 differences and why the improved choices are closer to the quantities the outputs stand for.
 """
 

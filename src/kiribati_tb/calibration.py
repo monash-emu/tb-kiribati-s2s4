@@ -9,7 +9,7 @@ standard deviation. Every target names a derived output of the model's ``OutputS
 
 The calibration solve is the original's: summer2gen's Dormand–Prince at its default
 ``rtol = atol = 1.4e-4`` on the parity outputs. ``CALIBRATION_IMPROVED`` uses the improved
-variant's solver instead (more accurate for fewer steps; see ``docs/06``).
+variant's solver instead (more accurate for fewer steps; see ``docs/08-parity-and-improved.md``).
 """
 
 from __future__ import annotations

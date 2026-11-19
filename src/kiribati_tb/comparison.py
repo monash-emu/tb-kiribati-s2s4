@@ -1,6 +1,6 @@
 """Parity against improved: what changes, by how much, and which is closer to the truth.
 
-Used by ``scripts/compare_improved.py`` and ``docs/06-parity-and-improved.ipynb``.
+Used by ``scripts/compare_improved.py`` and ``docs/08-parity-and-improved.md``.
 
 Two separate questions:
 
