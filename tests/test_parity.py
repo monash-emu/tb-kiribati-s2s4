@@ -13,7 +13,7 @@ from functools import cache
 import pandas as pd
 import pytest
 
-from kiribati_tb import model, model_summer4
+from kiribati_tb import model, model_strata, model_summer4
 from kiribati_tb.model import TBModel
 from kiribati_tb.runner_tools import (
     DEFAULT_MODEL_CONFIG,
@@ -34,9 +34,14 @@ FIXTURES: dict[str, tuple[bool, str | None]] = {
     "hetero_scenario_3": (True, "scenario_3"),
     "hetero_scenario_8": (True, "scenario_8"),
 }
-# The tbh-style model (kiribati_tb.model) and the compact one (kiribati_tb.model_summer4) build
-# the same model; every golden test runs on both.
-BUILDERS = {"tbh_style": model.get_tb_model, "summer4_way": model_summer4.get_tb_model}
+# Three builders of the same model: tbh-style (kiribati_tb.model), compact (model_summer4) and
+# TB disease stratified by clinical status and infectiousness (model_strata). Every golden test
+# runs on all three.
+BUILDERS = {
+    "tbh_style": model.get_tb_model,
+    "summer4_way": model_summer4.get_tb_model,
+    "disease_strata": model_strata.get_tb_model,
+}
 CASES = [(fixture, builder) for builder in BUILDERS for fixture in FIXTURES]
 ATOL_COMPARTMENTS = 1e-6  # persons
 ATOL_OUTPUTS = 1e-8

@@ -7,3 +7,4 @@ __pycache__/
 docs/_build/
 docs/jupyter_execute/
 outputs/
+.DS_Store

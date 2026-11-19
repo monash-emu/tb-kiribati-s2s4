@@ -250,6 +250,11 @@ pd.DataFrame({
 and the scaleup from `model.py`. Counting those, it is still about two thirds the size. It has
 about half the flows.
 
+## Going further
+
+The four disease states are really two axes. [TB disease as two properties](14-disease-strata)
+makes each a property, so the paired-state chains here become single-axis flows.
+
 ## Which to use
 
 Port with the `model.py` shape: it is the one a summer2 user can check line by line against the

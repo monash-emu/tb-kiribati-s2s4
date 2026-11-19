@@ -7,6 +7,9 @@
 .. automodule:: kiribati_tb.model_summer4
    :members: get_tb_model, screening_flows, flow_sources, death_outputs, chain, reverse
 
+.. automodule:: kiribati_tb.model_strata
+   :members: get_tb_model, compartment, get_force_of_infection, screening_flows, flow_sources, death_outputs
+
 .. automodule:: kiribati_tb.outputs
    :members: request_model_outputs, request_per_capita_output
 

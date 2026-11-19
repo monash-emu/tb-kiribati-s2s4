@@ -22,6 +22,7 @@ output names:
 | `data/scenarios.py` | `scenarios.py` | the screening scenarios, unchanged but for one import |
 | `runner_tools.py` | `runner_tools.py`, `calibration.py` | config, parameters, running; the estival calibration |
 | — | `model_summer4.py` | the same model in compact summer4 idiom ([the summer4 way](13-summer4-way)) |
+| — | `model_strata.py` | the same model with TB disease stratified by clinical status and infectiousness ([two properties](14-disease-strata)) |
 | — | `variants.py` | the `PARITY` and `IMPROVED` ways to solve and report |
 
 **Correct means parity.** The original was run once, in its own pinned environment, to make
@@ -45,6 +46,7 @@ measured.
 06-computed-values
 07-validation
 13-summer4-way
+14-disease-strata
 08-parity-and-improved
 09-calibration
 10-pitfalls

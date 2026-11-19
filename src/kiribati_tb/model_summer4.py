@@ -235,21 +235,22 @@ def get_tb_model(
         variant,
         flow_sources=flow_sources(screening_programs),
     )
-    breakpoints = tuple(
+    return TBModel(model.compile(), outputs, screening_breakpoints(screening_programs))
+
+
+def screening_breakpoints(
+    programs: list[ScreeningProgram] | tuple[ScreeningProgram, ...],
+) -> tuple[float, ...]:
+    """Times where a screening rate has a kink: each campaign's 0.01-year ramps."""
+    return tuple(
         sorted(
             {
                 float(t)
-                for prog in screening_programs
-                for t in (
-                    prog.start_time - 0.01,
-                    prog.start_time,
-                    prog.end_time - 0.01,
-                    prog.end_time,
-                )
+                for p in programs
+                for t in (p.start_time - 0.01, p.start_time, p.end_time - 0.01, p.end_time)
             }
         )
     )
-    return TBModel(model.compile(), outputs, breakpoints)
 
 
 def screening_flows(

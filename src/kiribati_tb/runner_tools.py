@@ -110,9 +110,14 @@ def run_model(
 
 
 def compartment_labels(tb_model: TBModel) -> list[str]:
-    """summer2 compartment names (``{state}Xage_{age}Xreachability_{reach}``) in map order."""
+    """summer2 compartment names (``{state}Xage_{age}Xreachability_{reach}``) in map order.
+
+    In :mod:`kiribati_tb.model_strata` a TB compartment is ``state=tb`` with ``clin`` and
+    ``inf`` traits; its summer2 state name is ``{clin}_{inf}`` (``subclin_lowinf``).
+    """
     rows = tb_model.model.pmap.to_dicts()
-    return [f"{r['state']}Xage_{r['age']}Xreachability_{r['reach']}" for r in rows]
+    states = [f"{r['clin']}_{r['inf']}" if "clin" in r else r["state"] for r in rows]
+    return [f"{s}Xage_{r['age']}Xreachability_{r['reach']}" for s, r in zip(states, rows)]
 
 
 def run_compartments(

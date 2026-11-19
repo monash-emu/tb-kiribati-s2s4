@@ -24,7 +24,9 @@ reachable``.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+import functools
+import operator
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from summer4 import OutputSet, Param
@@ -46,6 +48,7 @@ def request_model_outputs(
     computed_values: Mapping[str, Any],
     variant: Variant,
     flow_sources: Mapping[str, tuple[str, Any, Any]] | None = None,
+    compartment: Callable[[str], Any] | None = None,
 ) -> OutputSet:
     """Every derived output of the original model, by the original's names.
 
@@ -57,8 +60,17 @@ def request_model_outputs(
         variant: Sets the flow-output convention and how cumulative outputs are formed.
         flow_sources: For a model that merges the original's flows
             (:mod:`kiribati_tb.model_summer4`): original flow name -> ``(flow, source, dest)``.
+        compartment: The selector for an original compartment name; ``STATE[name]`` by default.
+            :mod:`kiribati_tb.model_strata` maps ``"subclin_inf"`` to
+            ``STATE["tb"] & CLIN["subclin"] & INF["inf"]``.
     """
     from kiribati_tb.model import AGE, REACH, STATE  # the model module imports this one
+
+    select = compartment or (lambda name: STATE[name])
+
+    def select_any(names: Sequence[str]) -> Any:
+        """Any of the named compartments."""
+        return functools.reduce(operator.or_, (select(name) for name in names))
 
     age_strata = AGE.traits
     reach_strata = REACH.traits
@@ -123,7 +135,9 @@ def request_model_outputs(
 
     # True absolute prevalence (compartment sizes), by age, reachability and both
     for comp in compartments:
-        outputs.compartments(f"prev_{comp}", STATE[comp], by=[AGE, REACH, (AGE, REACH)], keep=False)
+        outputs.compartments(
+            f"prev_{comp}", select(comp), by=[AGE, REACH, (AGE, REACH)], keep=False
+        )
     # True per-capita prevalence for TB and TBI
     for state, comp_list, per in zip(
         ["tbi", "tb"], [latent_compartments, active_compartments], [100.0, 100000.0]
@@ -201,7 +215,7 @@ def request_model_outputs(
     request_per_capita_output(outputs, "viable_tbi_prevalence", per=100.0)
 
     # Percentage subclinical (compare with Frascella et al., CID 2020)
-    subclinical = STATE.isin([c for c in active_compartments if c.startswith("subclin_")])
+    subclinical = select_any([c for c in active_compartments if c.startswith("subclin_")])
     outputs.compartments(
         f"subclin_tb_prevalenceXreach_{REACHABLE}", subclinical & reachable, keep=False
     )
@@ -222,7 +236,7 @@ def request_model_outputs(
         / outputs.ref(f"tb_prevalenceXreach_{REACHABLE}")
     )
     # Percentage infectious
-    infectious = STATE.isin([c for c in active_compartments if c.endswith("_inf")])
+    infectious = select_any([c for c in active_compartments if c.endswith("_inf")])
     outputs.compartments(
         f"infectious_tb_prevalenceXreach_{REACHABLE}", infectious & reachable, keep=False
     )
