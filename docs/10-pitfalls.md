@@ -55,8 +55,8 @@ targets and readers of both codebases look things up by name.
 ## Expressions
 
 **`defer` passes summer4 values, not plain arrays.** A per-age argument arrives as a
-`GroupedRate`. NumPy functions (`np.exp`, `np.maximum`) and arithmetic work on it; `jnp` functions
-do not. The original's `jnp.max(jnp.array((a, 0.)))` per age becomes `np.maximum(a, 0.)`.
+`GroupedRate`. NumPy functions (`np.exp`, `np.maximum`) and arithmetic work on it and keep the
+grouping; `jnp` functions do not, and summer4 raises a `TypeError` naming the argument. The original's `jnp.max(jnp.array((a, 0.)))` per age becomes `np.maximum(a, 0.)`.
 
 **`Lookup` needs a parameter.** `Lookup(table, index)` gathers rows only from a `Param` or
 `FieldRef`, not from a computed expression. To pick the year's matrix from a stack built by a

@@ -14,10 +14,11 @@ black = "*"
 ipykernel = "*"
 
 [pypi-dependencies]
-# summer4 main at the merge commit of PR #83 (feat/save-expressions): output requests (step 51)
-# and saved expressions (steps 40-41). No release tag contains them yet (latest v0.3.0a5);
-# move to the next tag when one is cut.
-summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "1ff6706056eb69c6dab0b2f0c86b3a7c787dc4e5", extras = ["calibration", "pandas", "frames"] }
+# summer4 main at the merge commit of PR #84 (feat/kiribati-gaps, step 52): Lookup on a computed
+# table, TraitChain rate-expression rates, per-request naming; on top of PR #83's output requests
+# (step 51) and saved expressions (steps 40-41). No release tag contains them yet (latest
+# v0.3.0a5); move to the next tag when one is cut.
+summer4 = { git = "https://github.com/monash-emu/summer4.git", rev = "5dab1b5a90954262bc0a27d445fe02c58b9206e0", extras = ["calibration", "pandas", "frames"] }
 # JAX on the 0.6 series, as summer4template pins it: summer4 develops and tests there, and JAX 0.12
 # breaks parallel NUTS chains through a diffrax solve (summer4 finding CX45).
 jax = ">=0.6,<0.7"

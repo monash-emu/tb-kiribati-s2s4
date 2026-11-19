@@ -20,7 +20,7 @@
    :members: get_parameters_and_priors, midpoint_params, run_model, run_compartments, compartment_labels
 
 .. automodule:: kiribati_tb.age_mixing
-   :members: get_model_ready_age_mixing_matrix, build_mixing_stack, matrix_for_year, yearly_matrices, read_conmat_matrix, canberra_distance
+   :members: get_model_ready_age_mixing_matrix, build_mixing_stack, yearly_matrices, read_conmat_matrix, canberra_distance
 
 .. automodule:: kiribati_tb.interventions
    :members: ScreeningTools, ScreeningProgram, Scenario, scr_rate_func

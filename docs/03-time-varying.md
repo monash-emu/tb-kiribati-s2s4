@@ -132,7 +132,8 @@ def get_neg_tx_outcome_funcs(bckd_death_funcs, tsr):
 `outcomes.relapse` and `outcomes.death` are ordinary rate expressions with one value per age.
 The function runs once per vector-field evaluation however many flows read its fields. Inside
 it, the per-age death rate arrives as a summer4 `GroupedRate`: use NumPy functions
-(`np.exp`, `np.maximum`) and arithmetic on it, not `jnp` functions, which do not know the type.
+(`np.exp`, `np.maximum`) and arithmetic on it, not `jnp` functions, which do not accept it (summer4
+raises an error naming the argument and the fix).
 (The original's `jnp.max(jnp.array((a, 0.)))` also had to become `np.maximum(a, 0.)` to work
 on all ages at once.)
 

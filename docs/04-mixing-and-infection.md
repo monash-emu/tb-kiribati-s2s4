@@ -91,13 +91,15 @@ three parameters, and the vector field picks the current year's:
 
 ```python
 stack = defer(build_mixing_stack)(Param("bg_mixing"), Param("a_spread"), Param("pc_strength"))
-age_mixing_matrix = defer(matrix_for_year)(stack, floor(Time() - 1850))
+age_mixing_matrix = Lookup(stack, floor(Time() - 1850))
 ```
 
 `stack` reads only parameters, so summer4 **hoists** it: it is computed once per run, before
 the solve, and its gradient flows to the three mixing parameters. No `prepare_fn` and no
 parameter-dictionary key is needed (the first port injected the stack as a parameter at run
-start). The per-step work is one gather.
+start). The per-step work is one gather: `Lookup` takes the year's row, held at the first or last
+year outside the table. (`Lookup` reads a computed table from summer4 PR #84 on; before that it
+took only a parameter, and this port indexed the stack with a second `defer`.)
 
 ```{code-cell} ipython3
 import numpy as np

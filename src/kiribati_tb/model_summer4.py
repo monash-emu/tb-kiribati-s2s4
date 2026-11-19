@@ -12,7 +12,7 @@ trajectories; it passes the same golden tests) in compact summer4 idiom:
   detected state → 1), births (2 → 1, with a parameter ``split``).
 - **``TraitChain`` within the state property** for moves between paired states: clinical
   progression and regression, infectiousness gain and loss (2 → 1 each), and progression from
-  ``incipient`` to the two subclinical states (2 → 1, the share by ``Dest``).
+  ``incipient`` to the two subclinical states (2 → 1, the infectious share as the per-pair ``rates``).
 
 Outputs keep the original names: :func:`flow_sources` maps every original flow name that no
 longer exists to ``(flow, source, dest)``, and :func:`~kiribati_tb.outputs.request_model_outputs`
@@ -26,7 +26,6 @@ from typing import Any
 import pandas as pd
 
 from summer4 import (
-    Dest,
     EntryFlow,
     FlowModel,
     InitialPopulation,
@@ -79,11 +78,20 @@ def reverse(pairs: tuple[tuple[str, str], ...]) -> tuple[tuple[str, str], ...]:
     return tuple((dest, src) for src, dest in pairs)
 
 
-def chain(name: str, pairs: tuple[tuple[str, str], ...], rate: Any, **kw: Any) -> TransitionFlow:
-    """One flow over explicit state pairs, within every age and reachability stratum."""
-    return TransitionFlow(
-        name, STATE.present(), STATE.present(), rate, pairing=TraitChain(STATE, pairs), **kw
-    )
+def chain(
+    name: str,
+    pairs: tuple[tuple[str, str], ...],
+    rate: Any,
+    *,
+    rates: tuple[Any, ...] | None = None,
+    **kw: Any,
+) -> TransitionFlow:
+    """One flow over explicit state pairs, within every age and reachability stratum.
+
+    ``rates`` are per-pair multipliers: numbers or rate expressions.
+    """
+    pairing = TraitChain(STATE, pairs, rates=rates)
+    return TransitionFlow(name, STATE.present(), STATE.present(), rate, pairing=pairing, **kw)
 
 
 def by_latency_band(stem: str) -> list[Multiply]:
@@ -152,15 +160,13 @@ def get_tb_model(
         ),
         TransitionFlow("clearance", s["contained"], s["cleared"], Param("clearance_rate")),
         TransitionFlow("breakdown", s["contained"], s["incipient"], Param("breakdown_rate")),
+        # One source, two destinations: the infectious share as per-pair rates
         chain(
             "progression",
             PROGRESSION,
             1.0,
-            adjust=[
-                Multiply(1.0 - p_inf, where=Dest(s["subclin_lowinf"])),
-                Multiply(p_inf, where=Dest(s["subclin_inf"])),
-                *by_latency_band("progression"),
-            ],
+            rates=(1.0 - p_inf, p_inf),
+            adjust=by_latency_band("progression"),
         ),
         # Active TB: paired moves within the state property
         chain("clinical_progression", CLINICAL, Param("clinical_progression_rate")),

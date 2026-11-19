@@ -36,7 +36,7 @@ import numpy as np
 import pandas as pd
 
 from kiribati_tb.demographic_tools import AGE_GROUPS, ISO3, MAX_AGE, Demography, load_demography
-from summer4 import Param, Time, defer, floor
+from summer4 import Lookup, Param, Time, defer, floor
 
 from kiribati_tb.paths import DATA_FOLDER
 
@@ -167,21 +167,16 @@ def build_mixing_stack(bg_mixing: Any, a_spread: Any, pc_strength: Any) -> Any:
     )
 
 
-def matrix_for_year(stack: Any, year_index: Any) -> Any:
-    """Row ``year_index`` of ``stack``, held at the first or last year outside the table."""
-    index = jnp.clip(year_index.astype(jnp.int32), 0, stack.shape[0] - 1)
-    return stack[index]
-
-
 def get_model_ready_age_mixing_matrix() -> Any:
     """The age-mixing matrix as a rate expression of time (``tbh.age_mixing``'s function).
 
     The stack is a parameter-only ``defer``, so it is hoisted and built once per run; the
-    per-step part is one gather of the current year's ``(8, 8)`` matrix. The same expression
-    object feeds the force of infection and the ``mixing_matrix_distance`` output.
+    per-step part is ``Lookup``'s gather of the current year's ``(8, 8)`` matrix, held at the
+    first or last year outside the table. The same expression object feeds the force of
+    infection and the ``mixing_matrix_distance`` output.
     """
     stack = defer(build_mixing_stack)(Param("bg_mixing"), Param("a_spread"), Param("pc_strength"))
-    return defer(matrix_for_year)(stack, floor(Time() - START_YEAR))
+    return Lookup(stack, floor(Time() - START_YEAR))
 
 
 def read_conmat_matrix(iso3: str = ISO3, age_groups: tuple[str, ...] = AGE_GROUPS) -> np.ndarray:

@@ -120,10 +120,13 @@ cumulative("cum_tb_incidence", "tb_incidence",
 (`cumulative` is `outputs.cumsum` in the parity variant and `outputs.cumulative_integral` in the
 improved one: [step 8](08-parity-and-improved).)
 
-Some loops stay loops, deliberately: a fan-out names strata `X{property}_{trait}`, and the
-original's mortality outputs are named `all_cause_mortality_from_{comp}_age_{age}`, which no
-naming template produces without renaming every other output. A loop of one-line requests is
-fine.
+Some loops stay loops, deliberately. The original's mortality outputs are named
+`all_cause_mortality_from_{comp}_age_{age}`. Since summer4 PR #84 a request takes its own
+`naming=`, so `outputs.flow("all_cause_mortality", ..., by=[(STATE, AGE)],
+naming="{name}_from_{state}_age_{age}")` would produce those names without touching the others. The
+port still lists them, because the original has no output for newborn `mtb_naive` (deaths are
+recycled there, so none leave it) and a fan-out would add that name. A loop of one-line requests
+is fine.
 
 ## Intermediates: `keep=False`
 

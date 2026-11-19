@@ -42,7 +42,7 @@ derived = run_model(tb, params, PARITY)          # the original's derived_output
 
 ## Pins
 
-summer4 is pinned to `main` at `1ff6706`, the merge commit of PR #83 (`feat/save-expressions`); JAX to the
+summer4 is pinned to `main` at `5dab1b5`, the merge commit of PR #84 (`feat/kiribati-gaps`); JAX to the
 0.6 series (`jax`/`jaxlib >=0.6,<0.7`, `numpyro <0.20`), as `summer4template` does.
 
 ## Licence

@@ -3,7 +3,8 @@
 The first port of this model, `kiribati-tb-summer4`, was written against summer4 `c9548d5`
 (after v0.2.0a5) and recorded every place it had to work around summer4 in
 `docs/summer4-workarounds.md` (W1–W11) and every sharp edge it met (S1–S12). This port is
-written against summer4 `main` at `1ff6706`, the merge of PR #83 (output requests and saved expressions). The tables
+written against summer4 `main` at `5dab1b5`, the merge of PR #84 (the gaps this port found, step
+52), after PR #83 (output requests and saved expressions). The tables
 say what happened to each.
 
 ## Workarounds
@@ -13,14 +14,14 @@ say what happened to each.
 | W1 | A one-trait `pool` property so homogeneous mixing could group by something | **Dropped** | `ForceOfInfection(group_by=None)` is one mixing pool (0.2.0a7) |
 | W2 | `SaveFn` leaves re-implementing the detection rates and the mixing lookup to save computed values | **Dropped** | `outputs[name] = expression` saves any rate expression (step 40, PR #83); `SaveFn` is gone |
 | W3 | A `TargetSet` subclass whose `plan()` did nothing, so targets could name derived outputs | **Dropped** | `BayesianModel(outputs=)` scores targets on evaluated outputs (0.2.0a7); the stock `TargetSet` works ([step 9](09-calibration)) |
-| W4 | Averted-burden quantiles computed from `PosteriorRuns.samples`, not `.differences` | **Not exercised** (open in summer4) | `differences` still gives quantiles of `scenario − ref`; the original reports `ref − scenario`, and quantiles do not commute with negation. This port does not do posterior full runs |
+| W4 | Averted-burden quantiles computed from `PosteriorRuns.samples`, not `.differences` | **Closed in summer4** (not exercised) | `differences(..., sign=-1)` quantiles `ref − scenario` per draw (PR #84, `CX56`). This port does not do posterior full runs |
 | W5 | `restrict_outputs`: an `OutputSet` with only the recorded names, every intermediate inlined | **Dropped** | `keep=False`, `kept()`, `subset(names)`; `posterior_runs` records `kept()` (step 51, PR #83) |
-| W6 | A log density built with `forward_mode_differentiation=True`, bypassing `BayesianModel.potential_fn` | **Not exercised** (open in summer4) | `BayesianModel` still has no forward-mode option; needed only where reverse-mode gradients of the solve are NaN |
-| W7 | Multi-start L-BFGS in scipy, one thread per start | **Not exercised** (open in summer4) | `optimize` still vmaps every start into one program, so adaptive-solver starts run in lockstep |
-| W8 | Checkpointed, resumable chunked MCMC with tail-ESS stopping | **Not exercised** (partly open) | `sample_until` now keeps `extra_fields`; `MCMCRun` still has no save/load, and `StopRule` no tail ESS |
-| W9 | NUTS on a hand-sheared potential to straighten the transmission ridge | **Not exercised** (open in summer4) | `BayesianModel` has no hook for a joint change of coordinates |
+| W6 | A log density built with `forward_mode_differentiation=True`, bypassing `BayesianModel.potential_fn` | **Not exercised** (recorded in summer4) | `BayesianModel` still has no forward-mode option (`CX59`, `futureplans/bayesian-model-forward-mode.md`); needed only where reverse-mode gradients of the solve are NaN |
+| W7 | Multi-start L-BFGS in scipy, one thread per start | **Not exercised** (partly closed in summer4) | `wf.Optax` now passes `value_fn`, so `Optax(optax.lbfgs())` runs (PR #84, `CX58`); `optimize` still vmaps every start into one program, so adaptive-solver starts run in lockstep (`CX60`) |
+| W8 | Checkpointed, resumable chunked MCMC with tail-ESS stopping | **Not exercised** (partly open) | `sample_until` now keeps `extra_fields` and `StopRule(max_seconds=)` stops at a deadline; `MCMCRun` still has no save/load, and `StopRule` no tail ESS (`CX61`) |
+| W9 | NUTS on a hand-sheared potential to straighten the transmission ridge | **Not exercised** (recorded in summer4) | `BayesianModel` has no hook for a joint change of coordinates (`CX62`) |
 | W10 | An `MCMC` subclass to keep `num_steps` | **Closed in summer4** | `sample_until(extra_fields=...)` keeps it |
-| W11 | NeuTra on a flat one-site model | **Not exercised** (open in summer4) | same gap as W9 |
+| W11 | NeuTra on a flat one-site model | **Not exercised** (recorded in summer4) | same gap as W9 (`CX62`) |
 
 So every workaround the **model** needed (W1, W2, W3, W5) is gone, and the remaining ones are all
 in the calibration *pipeline* of the first port (long MCMC runs, multi-start optimisation,
@@ -50,20 +51,15 @@ reparameterisation), which this port does not reproduce.
 
 ## New gaps found
 
-Recorded for summer4, not fixed here:
+Reported to summer4 and handled in PR #84 (roadmap step 52):
 
-- `Lookup` accepts only a `Param`/`FieldRef` table, so a table computed by a parameter-only
-  `defer` (hoisted, differentiable) cannot be gathered with it; a second `defer` that indexes it
-  works. `BayesianModel`'s docstring still points run-start work such as yearly mixing stacks at
-  `compile(prepare_fn=...)`, which a hoisted `defer` now covers.
-- `defer` hands a per-trait argument to the function as a `GroupedRate`, which supports NumPy
-  ufuncs but not `jnp` functions. Nothing in the guide says so; the error is JAX's
-  "not a valid JAX type".
-- summer4 has no exact accumulator of a flow over an interval, so yearly counts are only as good
-  as the save grid. A 0.01-year screening ramp needed the ramp times on the grid
-  (`futureplans/state-ledgers-flow-integral.md` plans one).
-- A fan-out's `naming` is set per `OutputSet`, not per request, so outputs named in a different
-  pattern (the original's `all_cause_mortality_from_{comp}_age_{age}`) need a loop.
+| Gap | summer4 | This port |
+| --- | --- | --- |
+| `Lookup` took only a `Param`/`FieldRef` table, so a stack computed by a parameter-only `defer` needed a second `defer` to index it; `BayesianModel`'s docstring still pointed stacks at `prepare_fn` | **Fixed** (`CX51`): any array-valued rate expression is a table, and a parameter-only one is hoisted | `get_model_ready_age_mixing_matrix` is `Lookup(stack, floor(Time() - 1850))` ([step 4](04-mixing-and-infection)) |
+| `defer` hands a per-trait argument over as a `GroupedRate`; NumPy works on it, `jnp` failed with JAX's own error | **Fixed** as a contract (`CX52`): `defer` documents it, and a `jnp` call raises an error naming the argument and the fix. JAX is not taught the type, because its operators would then drop the grouping silently | NumPy functions, as before ([pitfalls](10-pitfalls)) |
+| No exact accumulator of a flow over an interval; a 0.01-year screening ramp needed the ramp times on the save grid | **Recorded** (`CX57`, `futureplans/state-ledgers-flow-integral.md`, with this port's scenario-3 numbers) | ramp times on the grid and `jump_ts`, as before |
+| A fan-out's `naming` was per `OutputSet`, not per request | **Fixed** (`CX53`): `naming=` on each request, and a whole-name template | the mortality names stay a list ([step 5](05-derived-outputs)) |
+| `TraitChain`'s docstring described only ageing, and its `rates` took numbers only | **Fixed** (`CX54`): documented for any pairs within a property; rates may be expressions | progression is `rates=(1 - p, p)`, not two `Dest` adjustments ([the summer4 way](13-summer4-way)) |
 
 ## Size
 

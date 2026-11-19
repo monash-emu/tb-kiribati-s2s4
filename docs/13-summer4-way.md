@@ -120,8 +120,10 @@ chain("infectiousness_loss", reverse(INFECTIOUSNESS), Param("infectiousness_loss
 ::::
 
 Progression from `incipient` to the two subclinical states is a chain too: two pairs with the
-same source, and the infectious share chosen by the destination with
-`Multiply(p, where=Dest(s["subclin_inf"]))` and `Multiply(1 - p, where=Dest(s["subclin_lowinf"]))`.
+same source, and the infectious share as per-pair rates, `rates=(1 - p, p)`. A rate can be a
+number (an ageing band's `1/5`) or any rate expression (summer4 PR #84 on; before that the port
+wrote `Multiply(p, where=Dest(s["subclin_inf"]))` and `Multiply(1 - p, where=Dest(s["subclin_lowinf"]))`,
+which is what `rates=` compiles to).
 
 ## The edges of a chain
 
