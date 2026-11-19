@@ -21,6 +21,7 @@ output names:
 | `interventions.py` | `interventions.py` | `ScreeningTools`, `ScreeningProgram`, `Scenario` |
 | `data/scenarios.py` | `scenarios.py` | the screening scenarios, unchanged but for one import |
 | `runner_tools.py` | `runner_tools.py`, `calibration.py` | config, parameters, running; the estival calibration |
+| — | `model_summer4.py` | the same model in compact summer4 idiom ([the summer4 way](13-summer4-way)) |
 | — | `variants.py` | the `PARITY` and `IMPROVED` ways to solve and report |
 
 **Correct means parity.** The original was run once, in its own pinned environment, to make
@@ -43,6 +44,7 @@ measured.
 05-derived-outputs
 06-computed-values
 07-validation
+13-summer4-way
 08-parity-and-improved
 09-calibration
 10-pitfalls
@@ -64,6 +66,7 @@ measured.
 | `request_output_for_*`, `request_aggregate_output` | `OutputSet.compartments`, `.flow`, `.aggregate`, `by=` | [Outputs](05-derived-outputs) |
 | `add_computed_value_func` + `request_computed_value_output` | `outputs[name] = <rate expression>` | [Computed values](06-computed-values) |
 | `model.run(params)`; `get_derived_outputs_df()` | `cm.run(params, ..., outputs=outputs)` | [Outputs](05-derived-outputs) |
+| one flow per compartment with the same rate | one flow over a selector; `TraitChain(STATE, pairs)` for paired states | [The summer4 way](13-summer4-way) |
 | estival `BayesianCompartmentalModel` | `BayesianModel(cm, params, priors, TargetSet(...), outputs=...)` | [Calibration](09-calibration) |
 
 ## Reproducing

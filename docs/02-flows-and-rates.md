@@ -134,6 +134,12 @@ tv_detection_rate
 `tanh`: given expressions, it returns an expression. Rate expressions also hoist: anything that
 depends only on parameters is computed once per run, before the solve.
 
+## Fewer flows
+
+This page keeps one summer4 flow per summer2 flow wherever the rate differs, so the port reads
+beside the original. Flows that differ only by a per-compartment factor, or move between paired
+states, can each be one flow; [the summer4 way](13-summer4-way) shows the compact model.
+
 ## Checking the flows
 
 The compiled model lists every flow. Comparing names with the original's is a quick first check

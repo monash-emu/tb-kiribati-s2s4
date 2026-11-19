@@ -82,3 +82,6 @@ it keeps the original's five-step layout (build unstratified, stratify, then adj
 where the first port declared the map up front and put each flow's adjustments inline. It also
 holds what the first port kept elsewhere (the treatment-outcome function, the output wiring).
 The layout costs about 70 lines and buys a file a summer2 user can read beside `tbh/model.py`.
+
+The same model written compactly, `model_summer4.py` (313 lines, 256 code; 18 flows against
+32), passes the same goldens: see [the summer4 way](13-summer4-way).

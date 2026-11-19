@@ -4,6 +4,9 @@
 .. automodule:: kiribati_tb.model
    :members: get_tb_model, TBModel, get_natural_tb_model, get_force_of_infection, tanh_based_scaleup, add_detection_and_treatment, stratify_model_by_age, stratify_model_by_reachability, add_births_and_deaths, NegTxOutcomes, get_neg_tx_outcomes, get_neg_tx_outcome_funcs
 
+.. automodule:: kiribati_tb.model_summer4
+   :members: get_tb_model, screening_flows, flow_sources, death_outputs, chain, reverse
+
 .. automodule:: kiribati_tb.outputs
    :members: request_model_outputs, request_per_capita_output
 

@@ -45,6 +45,7 @@ def request_model_outputs(
     screening_flows: Sequence[str],
     computed_values: Mapping[str, Any],
     variant: Variant,
+    flow_sources: Mapping[str, tuple[str, Any, Any]] | None = None,
 ) -> OutputSet:
     """Every derived output of the original model, by the original's names.
 
@@ -54,6 +55,8 @@ def request_model_outputs(
         screening_flows: Screening flow names.
         computed_values: ``{output name: rate expression}`` to save during the solve.
         variant: Sets the flow-output convention and how cumulative outputs are formed.
+        flow_sources: For a model that merges the original's flows
+            (:mod:`kiribati_tb.model_summer4`): original flow name -> ``(flow, source, dest)``.
     """
     from kiribati_tb.model import AGE, REACH, STATE  # the model module imports this one
 
@@ -61,6 +64,15 @@ def request_model_outputs(
     reach_strata = REACH.traits
     outputs = OutputSet(flow_values=variant.flow_values)
     cumulative = outputs.cumsum if variant.cumulative == "cumsum" else outputs.cumulative_integral
+    merged = dict(flow_sources or {})
+
+    def flow(name: str, original: str, source: Any = None, keep: bool = True) -> None:
+        """``outputs.flow`` on an original flow name, or on the flow that now carries it."""
+        actual, merged_source, dest = merged.get(original, (original, None, None))
+        if merged_source is not None:
+            source = merged_source if source is None else merged_source & source
+        outputs.flow(name, actual, source=source, dest=dest, keep=keep)
+
     reachable = REACH[REACHABLE]
     age_aggregates = {
         "3_9": ["3", "5"],
@@ -84,14 +96,14 @@ def request_model_outputs(
 
     # Births (only those adding to the population, not deaths reintroduced as newborns)
     for reach in reach_strata:
-        outputs.flow(f"births_{reach}", f"births_{reach}")
+        flow(f"births_{reach}", f"births_{reach}")
     outputs.aggregate("births", [f"births_{reach}" for reach in reach_strata])
 
     # TB incidence (and cumulative)
     for inf_cat in ["lowinf", "inf"]:
-        outputs.flow(f"tb_incidence_{inf_cat}", f"progression_{inf_cat}")
+        flow(f"tb_incidence_{inf_cat}", f"progression_{inf_cat}")
         for reach in reach_strata:
-            outputs.flow(
+            flow(
                 f"tb_incidence_{inf_cat}Xreach_{reach}",
                 f"progression_{inf_cat}",
                 source=REACH[reach],
@@ -222,7 +234,7 @@ def request_model_outputs(
 
     # TB notifications
     for active_comp in active_compartments:
-        outputs.flow(f"notifications_{active_comp}", f"tb_detection_{active_comp}", keep=False)
+        flow(f"notifications_{active_comp}", f"tb_detection_{active_comp}", keep=False)
     outputs.aggregate(
         "notifications", [f"notifications_{active_comp}" for active_comp in active_compartments]
     )
@@ -234,18 +246,18 @@ def request_model_outputs(
 
     # Screening
     for scr_flow in screening_flows:
-        outputs.flow(scr_flow, scr_flow, keep=False)
+        flow(scr_flow, scr_flow, keep=False)
     if screening_flows:
         outputs.aggregate("screening", screening_flows)
     else:  # summer2 aggregates an empty list to zeros; summer4 asks for it explicitly
         outputs["screening"] = 0.0 * outputs.ref("births")
 
     # Mortality
-    for name, (flow, source) in nat_death_flows.items():
-        outputs.flow(name, flow, source=source, keep=False)
+    for name, (death_flow, source) in nat_death_flows.items():
+        outputs.flow(name, death_flow, source=source, keep=False)
     outputs.aggregate("nat_mortality", list(nat_death_flows))
-    for name, (flow, source) in tb_death_flows.items():
-        outputs.flow(name, flow, source=source, keep=False)
+    for name, (death_flow, source) in tb_death_flows.items():
+        outputs.flow(name, death_flow, source=source, keep=False)
     outputs.aggregate("tb_mortality", list(tb_death_flows))
     request_per_capita_output(outputs, "tb_mortality", per=100000.0)
     cumulative("cum_tb_mortality", "tb_mortality", start=CUMULATIVE_START)
