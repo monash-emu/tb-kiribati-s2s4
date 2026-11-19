@@ -11,11 +11,13 @@ Flow output values                ``"midpoint"`` (summer2's average    ``"rate"`
                                   and the one before)
 Cumulative outputs                ``cumsum`` of those amounts, from    ``cumulative_integral`` of the
                                   2026 (counts the 2025–26 interval)   rate from 2026 (0 in 2026)
-Save grid                         yearly                               every 0.1 year, so the trapezoid
+Save grid                         yearly                               every 0.1 year plus the screening
+                                                                       ramp times, so the trapezoid
                                                                        integral is accurate
 Solver                            Dormand–Prince, rtol=atol=1e-10      Tsit5, PID controller at
                                   (the goldens' setting)               rtol=1e-6, atol=1e-9, told about
                                                                        the yearly mixing-matrix jumps
+                                                                       and the screening ramps
 ================================  ===================================  ==================================
 
 ``docs/06-parity-and-improved.ipynb`` and ``scripts/compare_improved.py`` show the numerical
@@ -24,7 +26,8 @@ differences and why the improved choices are closer to the quantities the output
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
 import diffrax
@@ -40,6 +43,16 @@ END_TIME = 2035.0
 MIXING_JUMPS: np.ndarray = np.arange(START_TIME + 1.0, END_TIME)
 
 
+def _parity_solver(jumps: np.ndarray) -> dict[str, Any]:
+    # summer2gen's controller knows nothing about jumps; neither does the parity solve.
+    return {"solver": "dopri5", "rtol": 1e-10, "atol": 1e-10}
+
+
+def _improved_solver(jumps: np.ndarray) -> dict[str, Any]:
+    controller = diffrax.PIDController(rtol=1e-6, atol=1e-9, jump_ts=jumps)
+    return {"solver": Diffrax(diffrax.Tsit5(), stepsize_controller=controller), "max_steps": 16384}
+
+
 @dataclass(frozen=True)
 class Variant:
     """How to solve the model and report its flow outputs.
@@ -49,20 +62,37 @@ class Variant:
         flow_values: ``OutputSet(flow_values=...)``: ``"midpoint"`` or ``"rate"``.
         cumulative: ``"cumsum"`` (amounts per interval) or ``"cumulative_integral"`` (a rate).
         save_step: Spacing of the save grid, in years.
-        run_kwargs: Solver keywords for ``CompiledModel.run``.
+        solver: Builds the ``run`` solver keywords from the times where the vector field jumps
+            or has a kink.
+        use_breakpoints: Whether the model's breakpoints (the screening ramps) are added to the
+            save grid and given to the solver.
     """
 
     name: str
     flow_values: Literal["midpoint", "rate"]
     cumulative: Literal["cumsum", "cumulative_integral"]
     save_step: float
-    run_kwargs: dict[str, Any] = field(default_factory=dict)
+    solver: Callable[[np.ndarray], dict[str, Any]] = field(repr=False)
+    use_breakpoints: bool = False
 
-    @property
-    def save_times(self) -> np.ndarray:
-        """The save grid from 1850 to 2035."""
+    def save_times(self, breakpoints: Sequence[float] = ()) -> np.ndarray:
+        """The save grid from 1850 to 2035, plus ``breakpoints`` if the variant uses them."""
         n = int(round((END_TIME - START_TIME) / self.save_step))
-        return np.linspace(START_TIME, END_TIME, n + 1)
+        grid = np.linspace(START_TIME, END_TIME, n + 1)
+        if not self.use_breakpoints or not len(breakpoints):
+            return grid
+        return np.unique(np.round(np.concatenate([grid, np.asarray(breakpoints)]), 9))
+
+    def run_kwargs(self, breakpoints: Sequence[float] = ()) -> dict[str, Any]:
+        """Solver keywords for ``CompiledModel.run``."""
+        jumps = MIXING_JUMPS
+        if self.use_breakpoints and len(breakpoints):
+            jumps = np.unique(np.concatenate([MIXING_JUMPS, np.asarray(breakpoints)]))
+        return self.solver(jumps)
+
+    def with_save_step(self, save_step: float) -> Variant:
+        """The same variant on another save grid."""
+        return replace(self, name=f"{self.name}@{save_step:g}", save_step=save_step)
 
 
 # The goldens were made with summer2gen's Dormand–Prince ``odeint`` at rtol = atol = 1e-10; this
@@ -73,7 +103,7 @@ PARITY = Variant(
     flow_values="midpoint",
     cumulative="cumsum",
     save_step=1.0,
-    run_kwargs={"solver": "dopri5", "rtol": 1e-10, "atol": 1e-10},
+    solver=_parity_solver,
 )
 
 IMPROVED = Variant(
@@ -81,13 +111,8 @@ IMPROVED = Variant(
     flow_values="rate",
     cumulative="cumulative_integral",
     save_step=0.1,
-    run_kwargs={
-        "solver": Diffrax(
-            diffrax.Tsit5(),
-            stepsize_controller=diffrax.PIDController(rtol=1e-6, atol=1e-9, jump_ts=MIXING_JUMPS),
-        ),
-        "max_steps": 16384,
-    },
+    solver=_improved_solver,
+    use_breakpoints=True,
 )
 
 VARIANTS: dict[str, Variant] = {v.name: v for v in (PARITY, IMPROVED)}

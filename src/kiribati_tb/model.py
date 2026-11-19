@@ -101,6 +101,9 @@ class TBModel(NamedTuple):
 
     model: CompiledModel
     outputs: OutputSet
+    breakpoints: tuple[float, ...] = ()
+    """Times where a rate has a kink (the screening ramps); the improved variant saves and
+    steps on them."""
 
 
 def get_tb_model(
@@ -166,7 +169,21 @@ def get_tb_model(
         computed_values,
         variant,
     )
-    return TBModel(model.compile(), outputs)
+    breakpoints = tuple(
+        sorted(
+            {
+                float(t)
+                for prog in screening_programs
+                for t in (
+                    prog.start_time - 0.01,
+                    prog.start_time,
+                    prog.end_time - 0.01,
+                    prog.end_time,
+                )
+            }
+        )
+    )
+    return TBModel(model.compile(), outputs, breakpoints)
 
 
 def get_natural_tb_model(

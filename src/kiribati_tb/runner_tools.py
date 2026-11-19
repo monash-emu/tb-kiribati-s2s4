@@ -95,12 +95,18 @@ def run_model(
             ``list(outputs.keys())`` to include the ``keep=False`` intermediates.
     """
     outputs = tb_model.outputs if outputs is None else outputs
-    plan = outputs.plan(SavePlan(ts=variant.save_times))
+    times = variant.save_times(tb_model.breakpoints)
+    plan = outputs.plan(SavePlan(ts=times))
     result = tb_model.model.run(
-        params, t0=START_TIME, t1=END_TIME, dt=variant.save_step, save=plan, **variant.run_kwargs
+        params,
+        t0=START_TIME,
+        t1=END_TIME,
+        dt=variant.save_step,
+        save=plan,
+        **variant.run_kwargs(tb_model.breakpoints),
     )
     named = outputs.evaluate(result, params, names=names)
-    return _frame(named, variant.save_times)
+    return _frame(named, times)
 
 
 def compartment_labels(tb_model: TBModel) -> list[str]:
@@ -115,15 +121,16 @@ def run_compartments(
     """Compartment sizes at the save times, by summer2 compartment name (``get_outputs_df``)."""
     outputs = OutputSet()
     outputs["compartments"] = Compartments()
+    times = variant.save_times(tb_model.breakpoints)
     result = tb_model.model.run(
         params,
         t0=START_TIME,
         t1=END_TIME,
         dt=variant.save_step,
-        save=outputs.plan(SavePlan(ts=variant.save_times)),
-        **variant.run_kwargs,
+        save=outputs.plan(SavePlan(ts=times)),
+        **variant.run_kwargs(tb_model.breakpoints),
     )
     values = np.asarray(result["compartments"].values.data)
     frame = pd.DataFrame(values, columns=compartment_labels(tb_model))
-    frame.index = pd.Index(variant.save_times, name="time")
+    frame.index = pd.Index(times, name="time")
     return frame
